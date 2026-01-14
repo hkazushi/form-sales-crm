@@ -28,7 +28,7 @@ services:
     environment:
       - NODE_ENV=production
       - SUPABASE_URL=https://ipypoksxlmdzbrdzpqwr.supabase.co
-      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjdWx0c2JhcWtreXFoeWhpYWVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyNTQzMzgsImV4cCI6MjA4MzgzMDMzOH0.QJ02OzL_zIyxmvqRSd-CM66ScOqXYf6yQYBicB1lo6M
       - PORT=3000
     volumes:
       - ./logs:/app/logs

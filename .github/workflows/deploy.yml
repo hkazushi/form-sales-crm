@@ -1,0 +1,85 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Create deploy artifact
+      run: |
+        tar -czf deploy.tar.gz \
+          --exclude=node_modules \
+          --exclude=.git \
+          --exclude=.github \
+          .
+          
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deploy-package
+        path: deploy.tar.gz
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: deploy-package
+        
+    - name: Deploy to Hostinger
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOSTINGER_HOST }}
+        username: ${{ secrets.HOSTINGER_USER }}
+        key: ${{ secrets.HOSTINGER_SSH_KEY }}
+        script: |
+          cd /root/form-sales-crm
+          
+          # バックアップ作成
+          docker-compose down
+          tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz \
+            --exclude=node_modules \
+            --exclude=.git \
+            .
+            
+          # デプロイファイル展開
+          tar -xzf deploy.tar.gz
+          
+          # コンテナ再構築
+          docker-compose build --no-cache
+          docker-compose up -d
+          
+          # ヘルスチェック
+          sleep 30
+          if curl -f http://localhost:3001/health; then
+            echo "Deployment successful!"
+          else
+            echo "Deployment failed - rolling back..."
+            # ロールバック処理（必要に応じて実装）
+            docker-compose down
+            docker-compose up -d
+            exit 1
+          fi
